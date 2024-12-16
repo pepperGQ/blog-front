@@ -1,8 +1,8 @@
+import { STORAGE_TOKEN_KEY } from '@/stores/mutation-type'
+import { localStorage } from '@/utils/local-storage'
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import axios from 'axios'
 import { showNotify } from 'vant'
-import { localStorage } from '@/utils/local-storage'
-import { STORAGE_TOKEN_KEY } from '@/stores/mutation-type'
 
 // 这里是用于设定请求后端时，所用的 Token KEY
 // 可以根据自己的需要修改，常见的如 Access-Token，Authorization
@@ -14,6 +14,7 @@ export const REQUEST_TOKEN_KEY = 'Access-Token'
 const request = axios.create({
   // API 请求的默认前缀
   baseURL: import.meta.env.VITE_APP_API_BASE_URL,
+  // withCredentials: true,  // 如果后端设置了 credentials: true：允许携带cookie
   timeout: 6000, // 请求超时时间
 })
 

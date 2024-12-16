@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { queryProse } from '@/api'
+import { queryNodeProse } from '@/api';
 
 definePage({
   name: 'mock',
@@ -13,7 +13,7 @@ definePage({
 const messages = ref<string>('')
 
 function pull() {
-  queryProse().then(({ code, result }) => {
+  queryNodeProse().then(({ code, result }) => {
     if (code === 0)
       messages.value = result
   })
