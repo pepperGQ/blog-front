@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import type { PickerColumn } from 'vant'
-import useAppStore from '@/stores/modules/app'
-import { languageColumns, locale } from '@/utils/i18n'
+import { queryPostPage } from '@/api/post';
+import { STORAGE_TOKEN_KEY } from '@/stores/mutation-type';
+import { localStorage } from '@/utils/local-storage';
 
 definePage({
   name: 'home',
   meta: {
     level: 1,
+    needLogin: true
   },
 })
 
-const appStore = useAppStore()
 const checked = ref<boolean>(isDark.value)
-
+const router = useRouter()
+const loading = ref(false)
+const finished = ref(false)
+const pageList = ref([])
 watch(
   () => isDark.value,
   (newMode) => {
@@ -21,60 +24,42 @@ watch(
   { immediate: true },
 )
 
-function toggle() {
-  toggleDark()
-  appStore.switchMode(isDark.value ? 'dark' : 'light')
+onMounted(() => {
+  const token = localStorage.get(STORAGE_TOKEN_KEY)
+  if (token) {
+    onLoadPostPage()
+  } else {
+    router.replace('/login')
+  }
+
+})
+/* 获取博文列表 */
+const onLoadPostPage = async () => {
+  loading.value = true
+  const res = await queryPostPage()
+  loading.value = false
+  if (res.code === 0) {
+    pageList.value = res.data
+  }
+  finished.value = true
 }
-
-const { t } = useI18n()
-
-const showLanguagePicker = ref(false)
-const languageValues = ref<Array<string>>([locale.value])
-const language = computed(() => languageColumns.find(l => l.value === locale.value).text)
-
-function onLanguageConfirm(event: { selectedOptions: PickerColumn }) {
-  locale.value = event.selectedOptions[0].value as string
-  showLanguagePicker.value = false
+/* 点击新增 */
+const handleAddClick = () => {
+  router.push('/createPost')
 }
-
-const menuItems = computed(() => ([
-  { title: t('home.mockGuide'), route: 'mock' },
-  { title: t('home.echartsDemo'), route: 'charts' },
-  { title: t('home.unocssExample'), route: 'unocss' },
-  { title: t('home.persistPiniaState'), route: 'counter' },
-  { title: t('home.404Demo'), route: 'unknown' },
-  { title: t('home.keepAlive'), route: 'keepalive' },
-]))
 </script>
 
 <template>
-  <Container :padding-x="0">
-    <VanCellGroup inset>
-      <VanCell center :title="t('home.darkMode')">
-        <template #right-icon>
-          <VanSwitch v-model="checked" size="20px" aria-label="on/off Dark Mode" @click="toggle()" />
-        </template>
-      </VanCell>
-
-      <VanCell
-        is-link
-        :title="t('home.language')"
-        :value="language"
-        @click="showLanguagePicker = true"
-      />
-
-      <van-popup v-model:show="showLanguagePicker" position="bottom">
-        <van-picker
-          v-model="languageValues"
-          :columns="languageColumns"
-          @confirm="onLanguageConfirm"
-          @cancel="showLanguagePicker = false"
-        />
-      </van-popup>
-
-      <template v-for="item in menuItems" :key="item.route">
-        <VanCell :title="item.title" :to="item.route" is-link />
+  <Container :padding-x="0" :paddingT="0">
+    <van-nav-bar title="首页">
+      <template #right>
+        <van-icon name="search" size="18" class="mr-10" />
+        <van-icon name="add" size="18" @click="handleAddClick"/>
       </template>
-    </VanCellGroup>
+    </van-nav-bar>
+    <van-empty v-if="!pageList.length" description="暂无博文" />
+    <van-list v-else v-model:loading="loading" :finished="finished" finished-text="没有更多了" @load="onLoadPostPage">
+      <van-cell v-for="item in pageList" :key="item.id" :title="item.title" />
+    </van-list>
   </Container>
 </template>

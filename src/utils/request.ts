@@ -8,13 +8,12 @@ import { showNotify } from 'vant'
 // 可以根据自己的需要修改，常见的如 Access-Token，Authorization
 // 需要注意的是，请尽量保证使用中横线`-` 来作为分隔符，
 // 避免被 nginx 等负载均衡器丢弃了自定义的请求头
-export const REQUEST_TOKEN_KEY = 'Access-Token'
+export const REQUEST_TOKEN_KEY = 'Authorization'
 
 // 创建 axios 实例
 const request = axios.create({
   // API 请求的默认前缀
   baseURL: import.meta.env.VITE_APP_API_BASE_URL,
-  // withCredentials: true,  // 如果后端设置了 credentials: true：允许携带cookie
   timeout: 6000, // 请求超时时间
 })
 
@@ -36,13 +35,21 @@ function errorHandler(error: RequestError): Promise<any> {
       })
     }
     // 401 未登录/未授权
-    if (status === 401 && data.result && data.result.isLogin) {
-      showNotify({
+    // if (status === 401 && data.result && data.result.isLogin) {
+    //   showNotify({
+    //     type: 'danger',
+    //     message: 'Authorization verification failed',
+    //   })
+    //   // 如果你需要直接跳转登录页面
+    //   // location.replace(loginRoutePath)
+    // }
+    if(status === 401){
+      localStorage.remove(STORAGE_TOKEN_KEY)
+        showNotify({
         type: 'danger',
-        message: 'Authorization verification failed',
+        message: '登录失效，请重新登录！',
       })
-      // 如果你需要直接跳转登录页面
-      // location.replace(loginRoutePath)
+      location.replace('/login')
     }
   }
   return Promise.reject(error)
@@ -54,7 +61,7 @@ function requestHandler(config: InternalAxiosRequestConfig): InternalAxiosReques
   // 如果 token 存在
   // 让每个请求携带自定义 token, 请根据实际情况修改
   if (savedToken)
-    config.headers[REQUEST_TOKEN_KEY] = savedToken
+    config.headers[REQUEST_TOKEN_KEY] = `Bearer ${savedToken}`
 
   return config
 }

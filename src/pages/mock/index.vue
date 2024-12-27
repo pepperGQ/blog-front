@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { queryNodeProse } from '@/api';
+import { STORAGE_TOKEN_KEY } from '@/stores/mutation-type';
+import { localStorage } from '@/utils/local-storage';
+
+import { api_login, queryUser } from '@/api/users';
+// import { queryUser } from '@/api/users';
 
 definePage({
   name: 'mock',
@@ -12,11 +16,20 @@ definePage({
 
 const messages = ref<string>('')
 
-function pull() {
-  queryNodeProse().then(({ code, result }) => {
+const pull = async()=> {
+  await login()
+  
+  queryUser().then(({ code, result }) => {
     if (code === 0)
       messages.value = result
   })
+}
+
+const login = async()=>{
+  const res = await api_login({username:'admin', password:'123456'})
+  if(res.code === 0){
+    localStorage.set(STORAGE_TOKEN_KEY, res.data)
+  }
 }
 </script>
 

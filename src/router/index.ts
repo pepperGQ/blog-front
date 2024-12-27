@@ -4,9 +4,12 @@ import { routes } from 'vue-router/auto-routes'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 
-import type { EnhancedRouteLocation } from './types'
-import useRouteTransitionNameStore from '@/stores/modules/routeTransitionName'
 import useRouteCacheStore from '@/stores/modules/routeCache'
+import useRouteTransitionNameStore from '@/stores/modules/routeTransitionName'
+import type { EnhancedRouteLocation } from './types'
+
+import { STORAGE_TOKEN_KEY } from '@/stores/mutation-type'
+import { localStorage } from '@/utils/local-storage'
 
 NProgress.configure({ showSpinner: true, parent: '#app' })
 
@@ -23,7 +26,14 @@ router.beforeEach((to: EnhancedRouteLocation, from, next) => {
 
   // Route cache
   routeCacheStore.addRoute(to)
-
+  // 判断页面是否需要登录
+  if(to.meta.needLogin){
+    if(localStorage.get(STORAGE_TOKEN_KEY)){
+      next()
+    }else{
+      next('/login')
+    }
+  }
   if (to.meta.level > from.meta.level)
     routeTransitionNameStore.setName('slide-fadein-left')
 
